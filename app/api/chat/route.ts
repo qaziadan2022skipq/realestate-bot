@@ -39,14 +39,15 @@ export async function POST(req: Request) {
 
     if (run.status === "completed") {
       const messages = await openai.beta.threads.messages.list(run.thread_id);
-      for (const message of messages.data.reverse()) {
-        console.log(`${message.role} > ${message.content[0]}`);
-      }
+      const bot_message = messages.data[0]
+      
+        console.log(`${bot_message}`);
+        return NextResponse.json(bot_message.content[0].text.value, { status: 200 });
     } else {
       console.log(run.status);
     }
 
-    // return NextResponse.json(response.choices[0].message, { status: 200 });
+    
   } catch (error) {
     console.log("[CONVERSATION_ERROR]", error);
     return new NextResponse("Internal Error", { status: 500 });

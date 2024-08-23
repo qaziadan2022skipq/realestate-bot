@@ -23,7 +23,7 @@ const formSchema = z.object({
 });
 
 export default function Home() {
-  const [chat, setChat] = useState("text");
+  const [chat, setChat] = useState("");
   const router = useRouter();
   const [input, setInput] = useState<string>("");
   const [videoUrl, setVideoUrl] = useState("");
@@ -49,7 +49,12 @@ export default function Home() {
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     try {
       messages.addMessage({ role: "user", message_content: values.prompt });
-      messages.addMessage({ role: "bot", message_content: "I am fine" });
+      const response = await axios.post("/api/chat", {
+        userMessage: values.prompt,
+        threadId: "thread_zXtLgORym2y4MJgkXCG1CyqY",
+      });
+
+      messages.addMessage({ role: "bot", message_content: response.data });
       form.reset();
     } catch (error: any) {
       console.log(error);
@@ -59,106 +64,112 @@ export default function Home() {
   };
 
   return (
-    <div className="flex">
-      <div className="flex items-center justify-center">
-        <div className="flex flex-col items-center justify-center mt-6 px-2 h-full w-full">
-          <h1 className="text-purple-700 font-bold text-lg mb-6">Your Coach Lisa!</h1>
-          <iframe
-            width="560"
-            height="315"
-            src={videoUrl}
-            title="GeeksforGeeks"
-            allow="camera;microphone"
-            className="rounded-lg shadow-purple-300 shadow-xl"
-          ></iframe>
+    <div className="flex min-h-screen">
+      {/* Iframe Section */}
+      <div className="flex-1 flex items-center justify-center p-4">
+        <div className="flex flex-col items-center mr-[24rem]">
+          <h1 className="text-purple-700 font-bold text-lg mb-4">
+            Your Coach Lisa!
+          </h1>
+          {chat === "video" && (
+            <iframe
+              width="560"
+              height="315"
+              src={videoUrl}
+              title="Video Conversation"
+              allow="camera;microphone"
+              className="rounded-lg shadow-purple-300 shadow-xl"
+            ></iframe>
+          )}
         </div>
       </div>
-      <div className="flex flex-col h-screen px-2 absolute right-2 bg-purple-100 border-l-2 rounded-tl-2xl rounded-bl-2xl">
-        <div className="flex items-center px-14 justify-between my-4 gap-x-4">
-          <Button className="bg-purple-700 drop-shadow-lg shadow-purple-300 rounded-xl" onClick={() => setChat("text")}>
+
+      {/* Chat Section */}
+      <div className="fixed right-0 top-0 h-full w-96 bg-purple-100 border-l-2 border-purple-200 rounded-tl-2xl rounded-bl-2xl flex flex-col p-4">
+        <div className="flex items-center justify-between mb-4">
+          <Button
+            className="bg-purple-700 text-white rounded-xl shadow-md hover:bg-purple-800"
+            onClick={() => setChat("")}
+          >
             Text Chat
           </Button>
-          <Button className="bg-purple-700 drop-shadow-lg shadow-purple-300 rounded-xl" onClick={() => setChat("video")}>
+          <Button
+            className="bg-purple-700 text-white rounded-xl shadow-md hover:bg-purple-800"
+            onClick={() => setChat("video")}
+          >
             Video Chat
           </Button>
         </div>
 
-        <>
-          <div className="flex-grow px-2 lg:px-4 w-full mx-2 overflow-y-auto">
-            <div className="space-y-4 mt-4">
-              {isLoading && (
-                <div className="p-8 rounded-lg w-full flex items-center justify-center bg-muted">
-                  <Loader />
-                </div>
-              )}
-
-              <div className="flex flex-col gap-y-4">
-                {messages.messages.map((message, index) => (
-                  <div
-                    key={index}
-                    className={cn(
-                      "p-6 w-full flex gap-x-8 rounded-xl items-start",
-                      "bg-white border-2 border-black/10 drop-shadow-lg shadow-purple-300 "
-                    )}
-                  >
-                    {message.role === "bot" && <BotAvatar />}
-                    {message.role !== "bot" && <MessageCircle />}
-                    <p className="text-sm">{message.message_content}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          <div id="chat" className="relative w-full mb-4 px-2">
-            <Form {...form}>
-              <form
-                onSubmit={form.handleSubmit(onSubmit)}
-                className="
-              rounded-lg 
-              border 
-              w-full 
-              p-1 
-              px-1 
-              md:px-4 
-              focus-within:shadow-sm
-              grid
-              grid-cols-12
-              gap-2
-              bg-white
-            "
+        <div className="flex-grow overflow-y-auto mb-4">
+          <div className="space-y-4">
+            {messages.messages.map((message, index) => (
+              <div
+                key={index}
+                className={cn(
+                  "p-4 flex items-start gap-4 rounded-lg",
+                  "bg-white border border-gray-200 shadow-md"
+                )}
               >
-                <FormField
-                  name="prompt"
-                  render={({ field }) => (
-                    <FormItem className="col-span-9 lg:col-span-9">
-                      <FormControl className="m-0 p-0">
-                        <Input
-                          className="border-0 outline-none focus-visible:ring-0 focus-visible:ring-transparent"
-                          disabled={isLoading}
-                          placeholder="What is realestate?"
-                          {...field}
-                        />
-                      </FormControl>
-                    </FormItem>
-                  )}
-                />
-                <Button
-                  className="col-span-3 lg:col-span-3 w-full bg-purple-700 text-sm"
-                  type="submit"
-                  disabled={isLoading}
-                  size="icon"
-                >
-                  Send
-                </Button>
-              </form>
-            </Form>
+                {message.role === "bot" && <BotAvatar />}
+                {message.role !== "bot" && <MessageCircle />}
+                <p className="text-sm text-gray-700">
+                  {message.message_content}
+                </p>
+              </div>
+            ))}
           </div>
-        </>
+          {isLoading && (
+            <div className="p-8 rounded-lg flex items-center justify-center bg-gray-100">
+              <Loader />
+            </div>
+          )}
+        </div>
 
-        <div className="flex w-full items-center justify-center my-0 text-xs">
+        <div id="chat" className="mt-4">
+          <Form {...form}>
+            <form
+              onSubmit={form.handleSubmit(onSubmit)}
+              className="
+                flex
+                items-center
+                rounded-lg
+                border
+                bg-white
+                p-2
+                shadow-md
+                w-full
+              "
+            >
+              <FormField
+                name="prompt"
+                render={({ field }) => (
+                  <FormItem className="flex-1">
+                    <FormControl>
+                      <Input
+                        className="border-0 outline-none focus-visible:ring-0"
+                        disabled={isLoading}
+                        placeholder="What is real estate?"
+                        {...field}
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+              <Button
+                className="bg-purple-700 text-white ml-2"
+                type="submit"
+                disabled={isLoading}
+              >
+                Send
+              </Button>
+            </form>
+          </Form>
+        </div>
+
+        <div className="flex items-center justify-center mt-4 text-xs text-gray-600">
           Powered by{" "}
-          <Image src={"/maindark.png"} width={80} height={30} alt="main logo" />
+          <Image src={"/maindark.png"} width={80} height={30} alt="Main Logo" />
         </div>
       </div>
     </div>
