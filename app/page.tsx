@@ -1,113 +1,166 @@
+"use client";
+
+import { BotAvatar } from "@/components/lisa-avatar";
+import { Loader } from "@/components/loader";
+import { Button } from "@/components/ui/button";
+import { Form, FormControl, FormField, FormItem } from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import useMessageStore from "@/hooks/message";
+import { cn } from "@/lib/utils";
+import { zodResolver } from "@hookform/resolvers/zod";
+import axios from "axios";
+import { MessageCircle } from "lucide-react";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
+
+const formSchema = z.object({
+  prompt: z.string().min(1, {
+    message: "Prompt is required",
+  }),
+});
 
 export default function Home() {
+  const [chat, setChat] = useState("text");
+  const router = useRouter();
+  const [input, setInput] = useState<string>("");
+  const [videoUrl, setVideoUrl] = useState("");
+  const messages = useMessageStore();
+
+  useEffect(() => {
+    videoConversation();
+  }, []);
+
+  const videoConversation = async () => {
+    const videoLink = await axios.post("/api/create_video_conversation");
+    setVideoUrl(videoLink.data.data.conversation_url);
+  };
+
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      prompt: "",
+    },
+  });
+
+  const isLoading = form.formState.isSubmitting;
+  const onSubmit = async (values: z.infer<typeof formSchema>) => {
+    try {
+      messages.addMessage({ role: "user", message_content: values.prompt });
+      messages.addMessage({ role: "bot", message_content: "I am fine" });
+      form.reset();
+    } catch (error: any) {
+      console.log(error);
+    } finally {
+      router.refresh();
+    }
+  };
+
   return (
-    <main className="flex min-h-screen flex-col items-center justify-between p-24">
-      <div className="z-10 w-full max-w-5xl items-center justify-between font-mono text-sm lg:flex">
-        <p className="fixed left-0 top-0 flex w-full justify-center border-b border-gray-300 bg-gradient-to-b from-zinc-200 pb-6 pt-8 backdrop-blur-2xl dark:border-neutral-800 dark:bg-zinc-800/30 dark:from-inherit lg:static lg:w-auto  lg:rounded-xl lg:border lg:bg-gray-200 lg:p-4 lg:dark:bg-zinc-800/30">
-          Get started by editing&nbsp;
-          <code className="font-mono font-bold">app/page.tsx</code>
-        </p>
-        <div className="fixed bottom-0 left-0 flex h-48 w-full items-end justify-center bg-gradient-to-t from-white via-white dark:from-black dark:via-black lg:static lg:size-auto lg:bg-none">
-          <a
-            className="pointer-events-none flex place-items-center gap-2 p-8 lg:pointer-events-auto lg:p-0"
-            href="https://vercel.com?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            By{" "}
-            <Image
-              src="/vercel.svg"
-              alt="Vercel Logo"
-              className="dark:invert"
-              width={100}
-              height={24}
-              priority
-            />
-          </a>
+    <div className="flex">
+      <div className="flex items-center justify-center">
+        <div className="flex flex-col items-center justify-center mt-6 px-2 h-full w-full">
+          <h1 className="text-purple-700 font-bold text-lg mb-6">Your Coach Lisa!</h1>
+          <iframe
+            width="560"
+            height="315"
+            src={videoUrl}
+            title="GeeksforGeeks"
+            allow="camera;microphone"
+            className="rounded-lg shadow-purple-300 shadow-xl"
+          ></iframe>
         </div>
       </div>
+      <div className="flex flex-col h-screen px-2 absolute right-2 bg-purple-100 border-l-2 rounded-tl-2xl rounded-bl-2xl">
+        <div className="flex items-center px-14 justify-between my-4 gap-x-4">
+          <Button className="bg-purple-700 drop-shadow-lg shadow-purple-300 rounded-xl" onClick={() => setChat("text")}>
+            Text Chat
+          </Button>
+          <Button className="bg-purple-700 drop-shadow-lg shadow-purple-300 rounded-xl" onClick={() => setChat("video")}>
+            Video Chat
+          </Button>
+        </div>
 
-      <div className="relative z-[-1] flex place-items-center before:absolute before:h-[300px] before:w-full before:-translate-x-1/2 before:rounded-full before:bg-gradient-radial before:from-white before:to-transparent before:blur-2xl before:content-[''] after:absolute after:-z-20 after:h-[180px] after:w-full after:translate-x-1/3 after:bg-gradient-conic after:from-sky-200 after:via-blue-200 after:blur-2xl after:content-[''] before:dark:bg-gradient-to-br before:dark:from-transparent before:dark:to-blue-700 before:dark:opacity-10 after:dark:from-sky-900 after:dark:via-[#0141ff] after:dark:opacity-40 sm:before:w-[480px] sm:after:w-[240px] before:lg:h-[360px]">
-        <Image
-          className="relative dark:drop-shadow-[0_0_0.3rem_#ffffff70] dark:invert"
-          src="/next.svg"
-          alt="Next.js Logo"
-          width={180}
-          height={37}
-          priority
-        />
+        <>
+          <div className="flex-grow px-2 lg:px-4 w-full mx-2 overflow-y-auto">
+            <div className="space-y-4 mt-4">
+              {isLoading && (
+                <div className="p-8 rounded-lg w-full flex items-center justify-center bg-muted">
+                  <Loader />
+                </div>
+              )}
+
+              <div className="flex flex-col gap-y-4">
+                {messages.messages.map((message, index) => (
+                  <div
+                    key={index}
+                    className={cn(
+                      "p-6 w-full flex gap-x-8 rounded-xl items-start",
+                      "bg-white border-2 border-black/10 drop-shadow-lg shadow-purple-300 "
+                    )}
+                  >
+                    {message.role === "bot" && <BotAvatar />}
+                    {message.role !== "bot" && <MessageCircle />}
+                    <p className="text-sm">{message.message_content}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <div id="chat" className="relative w-full mb-4 px-2">
+            <Form {...form}>
+              <form
+                onSubmit={form.handleSubmit(onSubmit)}
+                className="
+              rounded-lg 
+              border 
+              w-full 
+              p-1 
+              px-1 
+              md:px-4 
+              focus-within:shadow-sm
+              grid
+              grid-cols-12
+              gap-2
+              bg-white
+            "
+              >
+                <FormField
+                  name="prompt"
+                  render={({ field }) => (
+                    <FormItem className="col-span-9 lg:col-span-9">
+                      <FormControl className="m-0 p-0">
+                        <Input
+                          className="border-0 outline-none focus-visible:ring-0 focus-visible:ring-transparent"
+                          disabled={isLoading}
+                          placeholder="What is realestate?"
+                          {...field}
+                        />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+                <Button
+                  className="col-span-3 lg:col-span-3 w-full bg-purple-700 text-sm"
+                  type="submit"
+                  disabled={isLoading}
+                  size="icon"
+                >
+                  Send
+                </Button>
+              </form>
+            </Form>
+          </div>
+        </>
+
+        <div className="flex w-full items-center justify-center my-0 text-xs">
+          Powered by{" "}
+          <Image src={"/maindark.png"} width={80} height={30} alt="main logo" />
+        </div>
       </div>
-
-      <div className="mb-32 grid text-center lg:mb-0 lg:w-full lg:max-w-5xl lg:grid-cols-4 lg:text-left">
-        <a
-          href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className="mb-3 text-2xl font-semibold">
-            Docs{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className="m-0 max-w-[30ch] text-sm opacity-50">
-            Find in-depth information about Next.js features and API.
-          </p>
-        </a>
-
-        <a
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className="mb-3 text-2xl font-semibold">
-            Learn{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className="m-0 max-w-[30ch] text-sm opacity-50">
-            Learn about Next.js in an interactive course with&nbsp;quizzes!
-          </p>
-        </a>
-
-        <a
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className="mb-3 text-2xl font-semibold">
-            Templates{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className="m-0 max-w-[30ch] text-sm opacity-50">
-            Explore starter templates for Next.js.
-          </p>
-        </a>
-
-        <a
-          href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className="mb-3 text-2xl font-semibold">
-            Deploy{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className="m-0 max-w-[30ch] text-balance text-sm opacity-50">
-            Instantly deploy your Next.js site to a shareable URL with Vercel.
-          </p>
-        </a>
-      </div>
-    </main>
+    </div>
   );
 }
