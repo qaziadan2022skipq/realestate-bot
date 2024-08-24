@@ -88,7 +88,7 @@ export default function Home() {
       {/* Iframe Section */}
       <div className="flex-1 flex items-center justify-center p-4">
         <div className="flex flex-col items-start mr-[24rem]">
-          <h1 className="text-white font-bold text-lg mb-4">
+          <h1 className="text-white font-bold text-md mb-4">
             AI Lisa ✨ Mentor
           </h1>
           {chat === true ? (
