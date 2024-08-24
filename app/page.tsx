@@ -17,6 +17,7 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import Link from "next/link";
 
 const formSchema = z.object({
   prompt: z.string().min(1, {
@@ -83,10 +84,10 @@ export default function Home() {
   };
 
   return (
-    <div className="flex min-h-screen bg-gray-600">
+    <div className="flex min-h-screen bg-[#e4e4e4]">
       {/* Iframe Section */}
       <div className="flex-1 flex items-center justify-center p-4">
-        <div className="flex flex-col items-center mr-[24rem]">
+        <div className="flex flex-col items-start mr-[24rem]">
           <h1 className="text-white font-bold text-lg mb-4">
             AI Lisa ✨ Mentor
           </h1>
@@ -97,11 +98,11 @@ export default function Home() {
               src={videoUrl}
               title="Video Conversation"
               allow="camera;microphone"
-              className="rounded-lg shadow-purple-300 shadow-xl"
+              className="rounded-lg shadow-[#404040] shadow-xl"
             ></iframe>
           ) : (
             <Image
-              className="rounded-xl shadow-gray-300/20 shadow-md drop-shadow-lg"
+              className="rounded-xl shadow-[#404040] shadow-md drop-shadow-lg"
               src={"/lisa.png"}
               width={300}
               height={300}
@@ -112,7 +113,7 @@ export default function Home() {
       </div>
 
       {/* Chat Section */}
-      <div className="fixed right-0 top-0 h-full w-96 bg-gray-200 border-l-2 border-purple-200 rounded-tl-2xl rounded-bl-2xl flex flex-col p-4">
+      <div className="fixed right-0 top-0 h-full w-96 bg-white border-l-2 border-purple-200 rounded-tl-2xl rounded-bl-2xl flex flex-col p-4">
         <div className="flex items-center justify-center gap-x-2 mb-4">
           {/* <Button
             className="bg-gray-700 text-white rounded-xl shadow-md hover:bg-gray-800"
@@ -127,6 +128,7 @@ export default function Home() {
             Video Chat
           </Button> */}
           <div className="flex items-center space-x-2">
+          <Label htmlFor="airplane-mode">Text Chat</Label>
             <Switch
               id="airplane-mode"
               className=" border border-gray-400"
@@ -186,7 +188,7 @@ export default function Home() {
                       <Input
                         className="border-0 outline-none focus-visible:ring-0"
                         disabled={isLoading}
-                        placeholder="What is real estate?"
+                        placeholder="Ask me anything"
                         {...field}
                       />
                     </FormControl>
@@ -205,13 +207,15 @@ export default function Home() {
         </div>
 
         <div className="flex items-center justify-center mt-4 text-xs text-gray-700">
-          Powered by{"  "}
-          <Image
-            src={"/maindark.png"}
-            width={120}
-            height={40}
-            alt="Main Logo"
-          />
+          <Link className="flex items-center justify-center gap-x-1 font-semibold" target="_blank" href={"https://feelsreal.ai"}>
+            <p className="font-medium text-md">Powered by</p>
+            <Image
+              src={"/logo2.png"}
+              width={90}
+              height={50}
+              alt="Main Logo"
+            />
+          </Link>
         </div>
       </div>
     </div>
