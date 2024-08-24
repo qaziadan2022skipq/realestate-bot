@@ -42,7 +42,7 @@ export async function POST(req: Request) {
       const bot_message = messages.data[0]
       
         console.log(`${bot_message}`);
-        return NextResponse.json(bot_message.content[0].text.value, { status: 200 });
+        return NextResponse.json(bot_message.content[0], { status: 200 });
     } else {
       console.log(run.status);
     }

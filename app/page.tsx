@@ -15,6 +15,8 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 
 const formSchema = z.object({
   prompt: z.string().min(1, {
@@ -23,15 +25,29 @@ const formSchema = z.object({
 });
 
 export default function Home() {
-  const [chat, setChat] = useState("");
+  const [chat, setChat] = useState(false);
   const router = useRouter();
   const [input, setInput] = useState<string>("");
+  const [threadId, setThreadId] = useState("");
   const [videoUrl, setVideoUrl] = useState("");
   const messages = useMessageStore();
 
   useEffect(() => {
     videoConversation();
+    if (!localStorage.getItem("thread_id")) {
+      createThread();
+    } else {
+      const id = localStorage.getItem("thread_id") || "";
+      setThreadId(id);
+    }
+
+    console.log(localStorage.getItem("thread_id"));
   }, []);
+
+  const createThread = async () => {
+    const thread_id = await axios.post("/api/create_thread");
+    localStorage.setItem("thread_id", thread_id.data);
+  };
 
   const videoConversation = async () => {
     const videoLink = await axios.post("/api/create_video_conversation");
@@ -51,10 +67,13 @@ export default function Home() {
       messages.addMessage({ role: "user", message_content: values.prompt });
       const response = await axios.post("/api/chat", {
         userMessage: values.prompt,
-        threadId: "thread_zXtLgORym2y4MJgkXCG1CyqY",
+        threadId: localStorage.getItem("thread_id"),
       });
 
-      messages.addMessage({ role: "bot", message_content: response.data });
+      messages.addMessage({
+        role: "bot",
+        message_content: response.data.text.value,
+      });
       form.reset();
     } catch (error: any) {
       console.log(error);
@@ -64,14 +83,14 @@ export default function Home() {
   };
 
   return (
-    <div className="flex min-h-screen">
+    <div className="flex min-h-screen bg-gray-600">
       {/* Iframe Section */}
       <div className="flex-1 flex items-center justify-center p-4">
         <div className="flex flex-col items-center mr-[24rem]">
-          <h1 className="text-purple-700 font-bold text-lg mb-4">
-            Your Coach Lisa!
+          <h1 className="text-white font-bold text-lg mb-4">
+            AI Lisa ✨ Mentor
           </h1>
-          {chat === "video" && (
+          {chat === true ? (
             <iframe
               width="560"
               height="315"
@@ -80,25 +99,41 @@ export default function Home() {
               allow="camera;microphone"
               className="rounded-lg shadow-purple-300 shadow-xl"
             ></iframe>
+          ) : (
+            <Image
+              className="rounded-xl shadow-gray-300/20 shadow-md drop-shadow-lg"
+              src={"/lisa.png"}
+              width={300}
+              height={300}
+              alt="Lisa"
+            />
           )}
         </div>
       </div>
 
       {/* Chat Section */}
-      <div className="fixed right-0 top-0 h-full w-96 bg-purple-100 border-l-2 border-purple-200 rounded-tl-2xl rounded-bl-2xl flex flex-col p-4">
-        <div className="flex items-center justify-between mb-4">
-          <Button
-            className="bg-purple-700 text-white rounded-xl shadow-md hover:bg-purple-800"
+      <div className="fixed right-0 top-0 h-full w-96 bg-gray-200 border-l-2 border-purple-200 rounded-tl-2xl rounded-bl-2xl flex flex-col p-4">
+        <div className="flex items-center justify-center gap-x-2 mb-4">
+          {/* <Button
+            className="bg-gray-700 text-white rounded-xl shadow-md hover:bg-gray-800"
             onClick={() => setChat("")}
           >
             Text Chat
           </Button>
           <Button
-            className="bg-purple-700 text-white rounded-xl shadow-md hover:bg-purple-800"
+            className="bg-gray-700 text-white rounded-xl shadow-md hover:bg-gray-800"
             onClick={() => setChat("video")}
           >
             Video Chat
-          </Button>
+          </Button> */}
+          <div className="flex items-center space-x-2">
+            <Switch
+              id="airplane-mode"
+              className=" border border-gray-400"
+              onCheckedChange={(e) => setChat(e)}
+            />
+            <Label htmlFor="airplane-mode">Video Chat</Label>
+          </div>
         </div>
 
         <div className="flex-grow overflow-y-auto mb-4">
@@ -112,7 +147,9 @@ export default function Home() {
                 )}
               >
                 {message.role === "bot" && <BotAvatar />}
-                {message.role !== "bot" && <MessageCircle />}
+                {message.role !== "bot" && (
+                  <MessageCircle className="h-6 w-6" />
+                )}
                 <p className="text-sm text-gray-700">
                   {message.message_content}
                 </p>
@@ -157,7 +194,7 @@ export default function Home() {
                 )}
               />
               <Button
-                className="bg-purple-700 text-white ml-2"
+                className="bg-gray-700 text-white ml-2 hover:bg-gray-800"
                 type="submit"
                 disabled={isLoading}
               >
@@ -167,9 +204,14 @@ export default function Home() {
           </Form>
         </div>
 
-        <div className="flex items-center justify-center mt-4 text-xs text-gray-600">
-          Powered by{" "}
-          <Image src={"/maindark.png"} width={80} height={30} alt="Main Logo" />
+        <div className="flex items-center justify-center mt-4 text-xs text-gray-700">
+          Powered by{"  "}
+          <Image
+            src={"/maindark.png"}
+            width={120}
+            height={40}
+            alt="Main Logo"
+          />
         </div>
       </div>
     </div>
