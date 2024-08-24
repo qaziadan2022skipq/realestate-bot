@@ -159,7 +159,7 @@ export default function Home() {
             ))}
           </div>
           {isLoading && (
-            <div className="p-8 rounded-lg flex items-center justify-center bg-gray-100">
+            <div className="p-8 rounded-lg flex items-center justify-center bg-white">
               <Loader />
             </div>
           )}
